@@ -239,7 +239,7 @@ jobs:
       - name: 上傳 world.zip 到 Google Drive
         run: |
           echo "上傳 world.zip 到 Google Drive..."
-          rclone -vv copy world.zip gdrive:minecraft_world \
+          rclone -vv copy world.zip gdrive:CobblemonWorld \
             --drive-chunk-size 64M \
             --transfers=4 \
             --retries=10 \
