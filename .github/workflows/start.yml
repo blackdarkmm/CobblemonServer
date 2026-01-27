@@ -241,12 +241,14 @@ jobs:
           echo "上傳 world.zip 到 Google Drive..."
           rclone -vv copy world.zip gdrive:CobblemonWorld \
             --drive-chunk-size 256M \
-            --tpslimit 5 \
-            --drive-pacer-min-sleep 100ms \
-            --transfers 1 \
+            --tpslimit 3 \
+            --drive-pacer-min-sleep 200ms \
+            --drive-pacer-burst 1 \
             --buffer-size 64M \
-            --retries 5 \
-            --stats 10s
+            --transfers 1 \
+            --retries 10 \
+            --stats 10s \
+            --user-agent "ISV|rclone.org|rclone/v1.72.1"
 
       # 最後一個 step 觸發自己重新執行
       - name: 觸發下一次執行
