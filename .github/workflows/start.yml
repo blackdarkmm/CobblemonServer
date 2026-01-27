@@ -63,9 +63,9 @@ jobs:
         env:
           FILE_ID: ${{ secrets.GDRIVE_FILE_ID }}
         run: |
-          echo "正在使用專屬 Client ID 透過檔案 ID 下載..."
-          # 使用 id=$FILE_ID 語法將遠端根目錄直接定位到該檔案
-          rclone copyto "gdrive,id=$FILE_ID:" ./world.zip -v \
+          # 直接指定雲端路徑，並強制下載為目前目錄的 world.zip
+          # 這樣就不會產生 CobblemonWorld 資料夾，檔案會直接出現在 ./world.zip
+          rclone copyto gdrive:CobblemonWorld/world.zip ./world.zip -v \
             --drive-chunk-size 256M \
             --buffer-size 128M \
             --tpslimit 3 \
