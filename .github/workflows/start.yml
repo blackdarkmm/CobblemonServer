@@ -63,9 +63,9 @@ jobs:
         env:
           FILE_ID: ${{ secrets.GDRIVE_FILE_ID }}
         run: |
-          echo "正在透過 Rclone API 使用 File ID 下載..."
-          # 使用 backend copyid 是 2026 年處理 Google Drive ID 下載最穩定的方式
-          rclone backend copyid gdrive: $FILE_ID . --target-file world.zip -v \
+          echo "正在使用專屬 Client ID 透過檔案 ID 下載..."
+          # 使用 id=$FILE_ID 語法將遠端根目錄直接定位到該檔案
+          rclone copyto "gdrive,id=$FILE_ID:" ./world.zip -v \
             --drive-chunk-size 256M \
             --tpslimit 10 \
             --stats 10s
