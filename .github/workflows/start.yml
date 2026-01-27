@@ -63,15 +63,12 @@ jobs:
         env:
           FILE_ID: ${{ secrets.GDRIVE_FILE_ID }}
         run: |
-          echo "正在透過 Rclone API 下載 world.zip..."
-          # 核心技巧：使用後端參數 drive-root-folder-id 直接定位到該檔案或其所在目錄
-          rclone copy gdrive: . \
-            --drive-root-folder-id $FILE_ID \
-            --files-from-raw "$FILE_ID" \
+          echo "正在透過 Rclone API 使用 File ID 下載..."
+          # 使用 backend copyid 是 2026 年處理 Google Drive ID 下載最穩定的方式
+          rclone backend copyid gdrive: $FILE_ID . --target-file world.zip -v \
             --drive-chunk-size 256M \
             --tpslimit 10 \
-            --stats 10s \
-            -v
+            --stats 10s
             
       - name: 下載 Cobblemon-fabric-1.7.1+1.21.1.jar（從 Google Drive）
         env:
