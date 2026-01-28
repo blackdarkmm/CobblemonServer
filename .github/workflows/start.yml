@@ -253,13 +253,14 @@ jobs:
 
       - name: 上傳 world.zip 到 Google Drive
         env:
-          SHARED_FOLDER_ID: ${{ secrets.GDRIVE_SHARED_FOLDER_ID }}
+          # 使用您新建立的第二個帳號機密
+          RCLONE_CONFIG_GDRIVE2_BASE64: ${{ secrets.RCLONE2_CONFIG_BASE64 }}
         run: |
-          echo "正在上傳至第二個帳號的共用資料夾 (ID: $SHARED_FOLDER_ID)..."
-          # 加上 --drive-root-folder-id 參數，這會強制將上傳目標指向該共用空間
-          # 注意：目標路徑寫 gdrive: 即可，因為 root 已經被鎖定在該資料夾了
-          rclone copy ./ gdrive: \
-            --drive-root-folder-id "$SHARED_FOLDER_ID" \
+          echo "正在使用第二個帳號的專屬通道上傳..."
+          
+          # 注意：這裡使用 gdrive2: 是因為您在 PowerShell 設定時取的名稱
+          # 目標路徑會直接在第二個帳號建立 CobblemonWorld 資料夾
+          rclone copy ./ gdrive2:CobblemonWorld/ \
             --include "world.z*" \
             --include "world.zip" \
             --drive-chunk-size 128M \
