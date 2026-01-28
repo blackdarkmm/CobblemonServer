@@ -82,9 +82,15 @@ jobs:
           # 3. 解壓縮合併後的完整檔案
           echo "正在解壓世界存檔..."
           unzip -v -o combined_world.zip
-          
-          # 4. 清理暫存的壓縮檔 (選用，節省 Runner 空間)
-          rm world.z* world.zip combined_world.zip
+
+      - name: 清理暫存檔案 (安全版)
+        # 加上 -f (force) 參數，即使檔案不存在也不會報錯導致流程中斷
+        run: |
+          echo "正在清理暫存壓縮檔..."
+          rm -f world.z*
+          rm -f world.zip
+          rm -f combined_world.zip
+          echo "清理完成。"
             
       - name: 下載 Cobblemon-fabric-1.7.1+1.21.1.jar（從 Google Drive）
         env:
