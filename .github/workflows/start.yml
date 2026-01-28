@@ -249,7 +249,7 @@ jobs:
           # 確保舊檔清理乾淨
           rm -f world.zip world.z*
           # 將資料夾壓縮成每份 2GB 的分卷
-          zip -r -s 2g world.zip ./world_folder_name
+          zip -r -s 2g world.zip ./world
 
       - name: 上傳 world.zip 到 Google Drive
         run: |
