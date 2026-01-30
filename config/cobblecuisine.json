@@ -1,7 +1,7 @@
 {
   "CONFIG_VERSION_INTERNAL": 3,
   "boostSettings": {
-    "effectDistanceBlocks": 40.0,
+    "effectDistanceBlocks": 64.0,
     "expBoostMultiplier": 2.0,
     "catchRateMultiplier": 2.0,
     "shinyBoostMultiplier": 48.0,
