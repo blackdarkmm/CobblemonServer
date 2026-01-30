@@ -43,75 +43,75 @@
   },
   "typeMultipliers": {
     "bug": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "normal": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "fire": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "water": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "electric": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "grass": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "ice": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "fighting": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "poison": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "ground": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "flying": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "psychic": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "rock": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "ghost": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "dragon": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "steel": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "dark": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     },
     "fairy": {
-      "weightMultiplier": 5.0,
+      "weightMultiplier": 15.0,
       "nonWeightMultiplier": 0.1
     }
   },
