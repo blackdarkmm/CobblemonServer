@@ -75,7 +75,7 @@ jobs:
           # 1. 必須加入 --config ./rclone.conf
           # 2. 加入 --log-file 方便失敗時查看原因
           rclone mount combined-34:world ./world \
-            --config ./rclone.conf \
+            --config ~/.config/rclone/rclone.conf \
             --vfs-cache-mode full \
             --vfs-cache-max-size 5G \
             --allow-other \
