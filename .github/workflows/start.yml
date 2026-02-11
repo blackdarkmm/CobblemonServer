@@ -69,7 +69,7 @@ jobs:
           # --daemon: 背景執行
           # --vfs-cache-mode full: 必備，讓伺服器能隨機讀寫區塊
           # --vfs-cache-max-size 5G: 限制快取大小，保護 Runner 剩餘空間
-          rclone mount combined:world ./world \
+          rclone mount combined-34:world ./world \
             --vfs-cache-mode full \
             --vfs-cache-max-size 5G \
             --vfs-read-chunk-size 32M \
