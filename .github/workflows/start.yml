@@ -59,31 +59,41 @@ jobs:
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG_BASE64 }}" | base64 -d > ~/.config/rclone/rclone.conf
 
-      - name: 聯合掛載雲端世界 (替代下載解壓)
+      - name: 聯合掛載雲端世界
         run: |
-          # 2. 解鎖 user_allow_other 權限 (關鍵步驟)
+          sudo apt-get update && sudo apt-get install -y fuse3
           sudo sed -i 's/#user_allow_other/user_allow_other/' /etc/fuse.conf
-        
-          echo "正在建立掛載點..."
           mkdir -p ./world
           
+          echo "=== 偵錯資訊 ==="
+          echo "目前目錄下的檔案："
+          ls -l
+          echo "檢查 rclone.conf 是否存在..."
+          [ -f "rclone.conf" ] && echo "✅ 找到 rclone.conf" || echo "❌ 找不到 rclone.conf"
+          
           echo "執行 Rclone 聯合掛載..."
-          # 這裡使用你設定好的 combined 遠端
-          # --daemon: 背景執行
-          # --vfs-cache-mode full: 必備，讓伺服器能隨機讀寫區塊
-          # --vfs-cache-max-size 5G: 限制快取大小，保護 Runner 剩餘空間
+          # 1. 必須加入 --config ./rclone.conf
+          # 2. 加入 --log-file 方便失敗時查看原因
           rclone mount combined-34:world ./world \
+            --config ./rclone.conf \
             --vfs-cache-mode full \
             --vfs-cache-max-size 5G \
-            --vfs-read-chunk-size 32M \
-            --buffer-size 64M \
-            --tpslimit 3 \
-            --vfs-write-back 5s \
-            --attr-timeout 1s \
-            --allow-other &
-
+            --allow-other \
+            --log-file rclone.log \
+            --log-level DEBUG &
+          
           echo "等待掛載生效 (15秒)..."
           sleep 15
+          
+          echo "=== 檢查掛載結果 ==="
+          if mountpoint -q ./world; then
+            echo "✅ 系統層級掛載成功！"
+            ls -lh ./world
+          else
+            echo "❌ 掛載失敗，日誌內容如下："
+            cat rclone.log
+            exit 1
+          fi
 
           echo "檢查掛載結果："
           if [ -f "./world/level.dat" ]; then
