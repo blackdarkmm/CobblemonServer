@@ -168,6 +168,10 @@ jobs:
 
       - name: 啟動 Fabric Server（使用 screen）
         run: |
+
+          mkdir -p logs
+          touch logs/latest.log
+          
           screen -L -dmS minecraft java -Xmx6G -Xms6G -jar fabric-server-launch.jar nogui
 
           tail -f logs/latest.log &
