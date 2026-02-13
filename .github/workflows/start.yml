@@ -169,13 +169,9 @@ jobs:
       - name: 啟動 Fabric Server（使用 screen）
         run: |
 
-          mkdir -p logs
-          touch logs/latest.log
-          
           screen -L -dmS minecraft java -Xmx6G -Xms6G -jar fabric-server-launch.jar nogui
 
-          tail -f logs/latest.log &
-          TAIL_PID=$!
+
           
           # 啟動 API 服務
           cd minecraft-log-stream
@@ -191,9 +187,6 @@ jobs:
               sleep 1
             fi
           done
-
-          kill $TAIL_PID
-          echo "🏁 伺服器運行結束。"
 
       - name: 啟動 Log Viewer Server
         run: |
@@ -222,6 +215,10 @@ jobs:
       - name: Minecraft Server 運行中（最多 5 小時或手動關閉）
         run: |
           echo "伺服器啟動成功，最多運行 5 小時。"
+
+          tail -f logs/latest.log &
+          TAIL_PID=$!
+          
           start_time=$(date +%s)
           timeout=$((5 * 60 * 60)) # 5 小時
           while screen -list | grep -q "minecraft"; do
@@ -235,6 +232,9 @@ jobs:
           done
           echo "伺服器已關閉或到時，繼續下一步..."
 
+          kill $TAIL_PID
+          echo "🏁 伺服器運行結束。"
+          
       - name: 優雅關閉 Minecraft 伺服器（如果還活著）
         run: |
           if screen -list | grep -q "minecraft"; then
