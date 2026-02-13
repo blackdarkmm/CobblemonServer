@@ -67,7 +67,7 @@ jobs:
           echo "2. 正在從雲端串流下載並即時解壓縮 (0 壓縮檔殘留)..."
           # 使用 rclone cat 讀取所有分卷，直接透過管線 (|) 餵給 tar
           # 這一步硬碟只會增加解壓後的檔案，完全不佔用任何壓縮檔空間
-          rclone cat gdrive2:CobblemonWorld/world.tar.zst.* | tar --zstd -xf -
+          rclone cat gdrive2:CobblemonWorld/world.tar.zst* | tar --zstd -xf -
 
           echo "3. 檢查解壓結果..."
           if [ -d "world" ]; then
