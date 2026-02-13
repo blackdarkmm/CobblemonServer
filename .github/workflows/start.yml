@@ -59,50 +59,26 @@ jobs:
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG_BASE64 }}" | base64 -d > ~/.config/rclone/rclone.conf
 
-      - name: 下載分卷並合併解壓
+      - name: 終極空間優化：tar.zst 串流解壓縮
         run: |
-          echo "正在從第二個帳號下載所有世界分卷..."
-          # 1. 下載 CobblemonWorld 資料夾下所有以 world 開頭的檔案
-          rclone -vv copy gdrive2:CobblemonWorld/ . \
-            --include "world.z*" \
-            --include "world.zip" \
-            --drive-chunk-size 256M \
-            --tpslimit 3 \
-            --stats 10s
+          echo "1. 準備環境 (安裝 zstd)..."
+          sudo apt-get update && sudo apt-get install -y zstd
 
-          echo "正在檢查下載的檔案..."
-          ls -lh world.*
+          echo "2. 正在從雲端串流下載並即時解壓縮 (0 壓縮檔殘留)..."
+          # 使用 rclone cat 讀取所有分卷，直接透過管線 (|) 餵給 tar
+          # 這一步硬碟只會增加解壓後的檔案，完全不佔用任何壓縮檔空間
+          rclone cat gdrive2:CobblemonWorld/world.tar.zst.* | tar --zstd -xf -
 
-          # 2. 合併分卷 (這是關鍵)
-          # -s 0 代表將分割卷合併成一個完整的單一 zip
-          # world.zip 是主索引檔，--out 指定輸出的完整檔名
-          echo "正在合併分卷..."
-          zip -v -s 0 world.zip --out combined_world.zip
-
-          echo "2. 關鍵動作：立即刪除所有分割卷，防止干擾解壓..."
-          # 這裡把 world.z01, world.z02, world.zip 全部砍掉
-          # 騰出 5.5GB 空間，並讓 unzip 只能看到唯一一個檔案
-          rm -f world.z01 world.z02 world.zip
-
-          # 3. 執行解壓 (不顯示詳細日誌，減少輸出負擔，節省 Runner 資源)
-          echo "正在解壓世界存檔 (請稍候)..."
-          unzip -q -o combined_world.zip
-
-          # 4. 【關鍵】解壓完立刻刪除合併檔
-          echo "正在刪除合併檔，釋放最後的空間..."
-          rm -f combined_world.zip
-
-          # 5. 檢查結果
-          echo "檢查 world 資料夾是否就緒："
+          echo "3. 檢查解壓結果..."
           if [ -d "world" ]; then
-            echo "成功！world 資料夾已出現。"
-            ls -d world/
+            echo "成功！world 資料夾已就緒。"
+            du -sh world/
+            df -h .
           else
-            echo "依舊找不到資料夾，顯示當前所有檔案："
+            echo "錯誤：找不到 world 資料夾，請檢查雲端檔名是否為 world.tar.zst.aa 等順序後綴。"
             ls -lh
             exit 1
           fi
-
       
       - name: 下載 Cobblemon-fabric-1.7.1+1.21.1.jar（從 Google Drive）
         env:
@@ -271,23 +247,24 @@ jobs:
           # 將資料夾壓縮成每份 2GB 的分卷
           zip -r -s 2g world.zip ./world
 
-      - name: 上傳 world.zip 到 Google Drive
+      - name: 終極空間優化：邊壓邊傳 (tar.zst 串流上傳)
+        if: always() # 確保伺服器關閉或崩潰時也會嘗試備份
         run: |
-          echo "正在使用第二個帳號的專屬通道上傳..."
+          echo "1. 正在清理雲端舊分卷，避免新舊檔案混亂..."
+          # 刪除舊的 world.tar.zst.aa, .ab 等檔案
+          rclone delete gdrive2:CobblemonWorld/ --include "world.tar.zst.*" --tpslimit 3
+
+          echo "2. 正在執行串流壓縮並分卷傳回 Google Drive..."
+          # 核心邏輯：
+          # tar --zstd: 將 world 資料夾打包並用 zstd 壓縮
+          # split: 將壓縮流切成每份 2000MB (避免單一檔案過大)
+          # --filter: 每一份切出來的資料，直接餵給 rclone rcat 寫入雲端
+          # $FILE 會自動代入 split 產生的後綴 (如 aa, ab, ac...)
           
-          # 注意：這裡使用 gdrive2: 是因為您在 PowerShell 設定時取的名稱
-          # 目標路徑會直接在第二個帳號建立 CobblemonWorld 資料夾
-          rclone -vv copy ./ gdrive2:CobblemonWorld/ \
-            --include "world.z*" \
-            --include "world.zip" \
-            --drive-chunk-size 128M \
-            --tpslimit 1 \
-            --drive-pacer-min-sleep 500ms \
-            --drive-pacer-burst 1 \
-            --transfers 1 \
-            --retries 15 \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" \
-            --stats 10s
+          tar --zstd -cf - world/ | split -b 2000M - --filter='rclone rcat gdrive2:CobblemonWorld/world.tar.zst.$FILE --drive-chunk-size 128M --tpslimit 1'
+
+          echo "3. 上傳完成！雲端檔案清單："
+          rclone lsf gdrive2:CobblemonWorld/ --include "world.tar.zst.*"
 
       # 最後一個 step 觸發自己重新執行
       - name: 觸發下一次執行
