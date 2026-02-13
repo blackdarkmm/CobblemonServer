@@ -216,11 +216,6 @@ jobs:
         run: |
           echo "伺服器啟動成功，最多運行 5 小時。"
 
-          mkdir -p logs
-          touch logs/latest.log
-          tail -f logs/latest.log &
-          TAIL_PID=$!
-          
           start_time=$(date +%s)
           timeout=$((5 * 60 * 60)) # 5 小時
           while screen -list | grep -q "minecraft"; do
@@ -234,9 +229,6 @@ jobs:
           done
           echo "伺服器已關閉或到時，繼續下一步..."
 
-          kill $TAIL_PID
-          echo "🏁 伺服器運行結束。"
-          
       - name: 優雅關閉 Minecraft 伺服器（如果還活著）
         run: |
           if screen -list | grep -q "minecraft"; then
