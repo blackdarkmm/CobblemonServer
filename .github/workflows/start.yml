@@ -145,9 +145,9 @@ jobs:
 
           echo "🕓 等待 ZeroTier 成功連線..."
           for i in {1..20}; do
-            STATUS=$(sudo zerotier-cli listnetworks | grep $ZT_NETWORK_ID | awk '{print $5}')
-            echo "目前狀態：$STATUS"
-            if [[ "$STATUS" == "OK" ]]; then
+            NET_INFO=$(sudo zerotier-cli listnetworks | grep "$ZT_NETWORK_ID")
+            echo "網路狀態詳細資訊：$NET_INFO"
+            if echo "$NET_INFO" | grep -q "OK"; then
               echo "✅ 已成功加入 ZeroTier 網路"
               break
             fi
@@ -235,14 +235,6 @@ jobs:
           else
             echo "伺服器已關閉，無需再次 stop。"
           fi
-
-      - name: 壓縮並分割檔案 (每 2GB 一個分卷)
-        run: |
-          echo "正在壓縮並分割世界檔案..."
-          # 確保舊檔清理乾淨
-          rm -f world.zip world.z*
-          # 將資料夾壓縮成每份 2GB 的分卷
-          zip -r -s 2g world.zip ./world
 
       - name: 終極空間優化：邊壓邊傳 (tar.zst 串流上傳)
         if: always() # 確保伺服器關閉或崩潰時也會嘗試備份
