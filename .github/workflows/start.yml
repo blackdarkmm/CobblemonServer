@@ -240,43 +240,28 @@ jobs:
             echo "伺服器已關閉，無需再次 stop。"
           fi
 
-      - name: 終極空間優化：GitHub Artifacts 備份 (修正指令版)
+      - name: 終極空間優化：分塊壓傳刪 (保留 2 天網頁紀錄)
+        if: always()
         run: |
-          echo "1. 壓縮與分卷地圖..."
-          # 邊壓邊切分，不產生大的中間檔
-          tar --zstd -cf - world/ | split -b 2000M - part_
+          echo "📦 開始執行極限空間備份 (11GB -> 2GB 分段處理)..."
           
-          # 將分卷資訊存入環境變數或直接處理
-          echo "分卷列表："
-          ls part_*
+          # 1. 核心「流水線」指令：
+          # tar: 讀取 world 資料夾並用 zstd 壓縮成流
+          # split: 每滿 2000M 就執行一次 filter 內的指令
+          # filter: 
+          #   - gh run artifact upload: 將當前分卷 ($FILE) 上傳到 mc-parts
+          #   - --retention-days 2: 讓這份備份在網頁上活 2 天
+          #   - rm $FILE: 上傳完「那一秒」立刻刪除該分卷，回歸 11GB 硬碟佔用
+          
+          tar --zstd -cf - world/ | split -b 2000M - world.tar.zst. --filter='
+            echo "正在上傳 $FILE ..."
+            gh run artifact upload --name mc-parts "$FILE" --retention-days 2
+            echo "✅ $FILE 上傳成功，立即刪除釋放空間。"
+            rm -f "$FILE"
+          '
 
-      # 使用官方 Action 上傳所有 part_* 檔案
-      - name: 上傳分卷到 Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mc-parts
-          path: part_*
-          retention-days: 1 # 僅保留最新一天
-
-      - name: 清理本地殘留
-        run: |
-          echo "正在刪除本地分卷釋放空間..."
-          rm -f part_*
-          
-      # 透過 API 刪除「上上次」的 Artifact (這比 gh 指令更穩)
-      - name: 刪除舊的 Artifacts (API 版)
-        run: |
-          # 這裡使用 curl 呼叫 GitHub API 來刪除名為 mc-parts 的舊存檔
-          # 避免 gh 指令版本不相容問題
-          ARTIFACT_IDS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com{{ github.repository }}/actions/artifacts?name=mc-parts" \
-            | jq -r '.artifacts[1:].id // empty')
-          
-          for id in $ARTIFACT_IDS; do
-            echo "正在刪除舊 Artifact ID: $id"
-            curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com{{ github.repository }}/actions/artifacts/$id"
-          done
+          echo "🏁 備份完成！地圖已分塊存入 GitHub Artifacts。"
+          echo "💡 你可以去 Actions 列表翻找兩天內（約 8-10 個 Run）的任一紀錄下載。"
         env:
           GH_TOKEN: ${{ github.token }}
 
