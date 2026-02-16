@@ -240,6 +240,37 @@ jobs:
             echo "伺服器已關閉，無需再次 stop。"
           fi
 
+      - name: 終極空間優化：雙重備份 (GDrive + Artifacts)
+        if: always()
+        run: |
+          echo "1. 清理舊資料..."
+          # 清理雲端與 GitHub 舊的 Artifacts 避免空間堆積
+          rclone delete gdrive2:CobblemonWorld/ --include "world.tar.zst.*" --drive-use-trash=false --tpslimit 3
+          gh run artifact delete --all || echo "No old artifacts"
+
+          echo "2. 開始執行串流壓縮與分卷..."
+          # 核心技巧：我們只壓一次，但透過 tee 產出兩組流，或者分兩次跑以確保穩定
+          # 為了硬碟空間，我們採取「先壓出一組分卷，傳完 GDrive 再傳 Artifact，最後刪除」
+          
+          tar --zstd -cf - world/ | split -b 2000M - part_
+          
+          for file in part_*; do
+            echo "正在處理分卷 $file ..."
+            
+            # 上傳到 Google Drive (重新命名回標準格式)
+            rclone rcat gdrive2:CobblemonWorld/world.tar.zst.${file#part_} < "$file" --tpslimit 1
+            
+            # 上傳到 GitHub Artifacts (使用 GitHub CLI)
+            gh run artifact upload --name mc-backup-parts "$file"
+            
+            # 傳完立刻刪除本地分卷，釋放硬碟空間
+            rm "$file"
+          done
+
+          echo "✅ 雙重備份完成！"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: 終極空間優化：邊壓邊傳 (tar.zst 串流上傳)
         run: |
           echo "1. 正在清理雲端舊分卷，避免新舊檔案混亂..."
