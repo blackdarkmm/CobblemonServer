@@ -241,7 +241,6 @@ jobs:
           fi
 
       - name: 終極空間優化：GitHub Artifacts 備份 (修正指令版)
-        if: always()
         run: |
           echo "1. 壓縮與分卷地圖..."
           # 邊壓邊切分，不產生大的中間檔
@@ -253,7 +252,6 @@ jobs:
 
       # 使用官方 Action 上傳所有 part_* 檔案
       - name: 上傳分卷到 Artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mc-parts
@@ -261,14 +259,12 @@ jobs:
           retention-days: 1 # 僅保留最新一天
 
       - name: 清理本地殘留
-        if: always()
         run: |
           echo "正在刪除本地分卷釋放空間..."
           rm -f part_*
           
       # 透過 API 刪除「上上次」的 Artifact (這比 gh 指令更穩)
       - name: 刪除舊的 Artifacts (API 版)
-        if: always()
         run: |
           # 這裡使用 curl 呼叫 GitHub API 來刪除名為 mc-parts 的舊存檔
           # 避免 gh 指令版本不相容問題
