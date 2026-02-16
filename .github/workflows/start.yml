@@ -241,7 +241,6 @@ jobs:
           fi
 
       - name: 終極空間優化：邊壓邊傳 (tar.zst 串流上傳)
-        if: always() # 確保伺服器關閉或崩潰時也會嘗試備份
         run: |
           echo "1. 正在清理雲端舊分卷，避免新舊檔案混亂..."
           # 刪除舊的 world.tar.zst.aa, .ab 等檔案
