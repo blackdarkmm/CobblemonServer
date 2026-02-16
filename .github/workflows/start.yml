@@ -240,29 +240,47 @@ jobs:
             echo "伺服器已關閉，無需再次 stop。"
           fi
 
-      - name: 終極空間優化：GitHub Artifacts 專用備份 (邊壓邊傳)
+      - name: 終極空間優化：GitHub Artifacts 備份 (修正指令版)
+        if: always()
         run: |
-          echo "1. 清理舊的 Artifacts (避免空間堆積)..."
-          # 使用 GitHub CLI 刪除所有舊的備份分卷
-          gh run artifact delete --all || echo "目前無舊存檔可刪除"
-
-          echo "2. 執行串流壓縮並即時分卷上傳..."
-          # 核心邏輯：
-          # tar --zstd: 將 world 打包並壓縮
-          # split: 切成每份 2000MB (繞過 Artifact 單檔 2GB 限制)
-          # 每產生一塊 part_xx，就立刻上傳並刪除本地暫存
-          
+          echo "1. 壓縮與分卷地圖..."
+          # 邊壓邊切分，不產生大的中間檔
           tar --zstd -cf - world/ | split -b 2000M - part_
           
-          for file in part_*; do
-            echo "正在上傳分卷 $file 到 GitHub Artifacts..."
-            gh run artifact upload --name mc-parts "$file"
-            
-            echo "上傳完成，立即刪除本地分卷 $file 釋放空間"
-            rm "$file"
-          done
+          # 將分卷資訊存入環境變數或直接處理
+          echo "分卷列表："
+          ls part_*
 
-          echo "✅ 雙重備份成功：已存入 GitHub Artifacts (mc-parts)"
+      # 使用官方 Action 上傳所有 part_* 檔案
+      - name: 上傳分卷到 Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mc-parts
+          path: part_*
+          retention-days: 1 # 僅保留最新一天
+
+      - name: 清理本地殘留
+        if: always()
+        run: |
+          echo "正在刪除本地分卷釋放空間..."
+          rm -f part_*
+          
+      # 透過 API 刪除「上上次」的 Artifact (這比 gh 指令更穩)
+      - name: 刪除舊的 Artifacts (API 版)
+        if: always()
+        run: |
+          # 這裡使用 curl 呼叫 GitHub API 來刪除名為 mc-parts 的舊存檔
+          # 避免 gh 指令版本不相容問題
+          ARTIFACT_IDS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com{{ github.repository }}/actions/artifacts?name=mc-parts" \
+            | jq -r '.artifacts[1:].id // empty')
+          
+          for id in $ARTIFACT_IDS; do
+            echo "正在刪除舊 Artifact ID: $id"
+            curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com{{ github.repository }}/actions/artifacts/$id"
+          done
         env:
           GH_TOKEN: ${{ github.token }}
 
