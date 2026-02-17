@@ -240,35 +240,31 @@ jobs:
             echo "伺服器已關閉，無需再次 stop。"
           fi
 
-      - name: 終極空間優化：分塊壓傳刪 (保留 2 天網頁紀錄)
-        if: always()
+      - name: 💾 備份階段：先抽脂再壓縮 (極限省空間)
+        if: always() # 確保伺服器關閉後一定執行
         run: |
-          echo "📦 開始執行極限空間備份 (11GB -> 2GB 分段處理)..."
+          echo "1. 🏁 伺服器已關閉，準備開始備份流程..."
           
-          # 1. 核心「流水線」指令：
-          # tar: 讀取 world 資料夾並用 zstd 壓縮成流
-          # split: 每滿 2000M 就執行一次 filter 內的指令
-          # filter: 
-          #   - gh run artifact upload: 將當前分卷 ($FILE) 上傳到 mc-parts
-          #   - --retention-days 2: 讓這份備份在網頁上活 2 天
-          #   - rm $FILE: 上傳完「那一秒」立刻刪除該分卷，回歸 11GB 硬碟佔用
+          echo "2. 🧹 正在執行磁碟抽脂 (刪除 .NET, Android, Haskell 等預裝工具)..."
+          # 在壓縮 11GB 地圖前，先清出約 20GB 的緩衝空間
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
           
-          tar --zstd -cf - world/ | split -b 2000M - world.tar.zst. --filter='
-            echo "正在上傳 $FILE ..."
-            # 使用 GitHub CLI 的 API 功能直接上傳 (這是最穩的方法)
-            # 注意：這裡我們模擬 Actions 內部的 Artifacts 流程
-            # 如果失敗，會立刻報錯停止，不會執行後面的 rm
-            gh api --method POST /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
-              -f name="mc-parts" -f file=@"$FILE" || { echo "❌ 上傳失敗"; exit 1; }
-            
-            echo "✅ $FILE 上傳成功，立即刪除釋放空間。"
-            rm -f "$FILE"
-          '
+          echo "3. 📦 正在執行串流壓縮與分卷 (zstd)..."
+          # 空間已清出，現在可以安全地壓出 5.5GB 的分卷而不爆硬碟
+          tar -I zstd -cf - world/ | split -b 2000M - world.tar.zst.
+          
+          echo "✅ 壓縮完成，目前硬碟狀態："
+          df -h .
+          ls -lh world.tar.zst.*
 
-          echo "🏁 備份完成！地圖已分塊存入 GitHub Artifacts。"
-          echo "💡 你可以去 Actions 列表翻找兩天內（約 8-10 個 Run）的任一紀錄下載。"
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: 🚀 執行官方 Action 上傳 (保留 2 天)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mc-parts
+          path: world.tar.zst.*
+          retention-days: 2
+          if-no-files-found: error
 
       - name: 終極空間優化：邊壓邊傳 (tar.zst 串流上傳)
         run: |
