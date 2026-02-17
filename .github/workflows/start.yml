@@ -255,9 +255,11 @@ jobs:
           
           tar --zstd -cf - world/ | split -b 2000M - world.tar.zst. --filter='
             echo "正在上傳 $FILE ..."
-            # 使用最基礎的 gh 指令，不加任何 --name 或 --run 參數
-            # 這樣舊版本也能跑，它會直接把檔案傳到當前的 Artifacts 區
-            gh artifact upload "$FILE" --name mc-parts
+            # 使用 GitHub CLI 的 API 功能直接上傳 (這是最穩的方法)
+            # 注意：這裡我們模擬 Actions 內部的 Artifacts 流程
+            # 如果失敗，會立刻報錯停止，不會執行後面的 rm
+            gh api --method POST /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
+              -f name="mc-parts" -f file=@"$FILE" || { echo "❌ 上傳失敗"; exit 1; }
             
             echo "✅ $FILE 上傳成功，立即刪除釋放空間。"
             rm -f "$FILE"
