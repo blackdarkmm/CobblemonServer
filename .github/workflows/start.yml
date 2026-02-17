@@ -255,10 +255,13 @@ jobs:
           
           tar --zstd -cf - world/ | split -b 2000M - world.tar.zst. --filter='
             echo "正在上傳 $FILE ..."
-            gh run upload-artifact --name mc-parts "$FILE"
+            # 使用最基礎的 gh 指令，不加任何 --name 或 --run 參數
+            # 這樣舊版本也能跑，它會直接把檔案傳到當前的 Artifacts 區
+            gh artifact upload "$FILE" --name mc-parts
+            
             echo "✅ $FILE 上傳成功，立即刪除釋放空間。"
             rm -f "$FILE"
-            '
+          '
 
           echo "🏁 備份完成！地圖已分塊存入 GitHub Artifacts。"
           echo "💡 你可以去 Actions 列表翻找兩天內（約 8-10 個 Run）的任一紀錄下載。"
