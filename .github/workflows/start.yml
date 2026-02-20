@@ -66,8 +66,7 @@ jobs:
 
           echo "2. 正在串流下載並解壓縮 (不產生任何暫存檔)..."
           # 使用 --include 確保按字母順序 (aa, ab...) 抓取並串接
-          rclone cat gdrive2:CobblemonWorld/ --include "world.tar.zst.a*" | tar --zstd -xf -
-
+          rclone lsf gdrive2:CobblemonWorld/ --include "world.tar.zst.a*" --files-only | sort | xargs -I {} rclone cat gdrive2:CobblemonWorld/{} | tar --zstd -xf -
           echo "3. 檢查結果..."
           if [ -d "world" ]; then
             echo "成功！world 資料夾已就緒。"
